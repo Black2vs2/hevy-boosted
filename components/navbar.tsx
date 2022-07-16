@@ -1,18 +1,34 @@
 import Image from "next/image";
 import React from "react";
+import { useRouter } from "next/router";
 
 import {
   HomeIcon,
   ClipboardListIcon,
   UserCircleIcon,
 } from "@heroicons/react/outline";
+import Link from "next/link";
 
-const NavbarItem = ({ item }: { item: NavbarItemType }) => {
+const NavbarItem = ({
+  item,
+  active,
+}: {
+  item: NavbarItemType;
+  active: boolean;
+}) => {
   const { ImageComponent, path, alt } = item;
   return (
-    <div className="p-4 mx-2 border-b-2 border-b-blue-600 border-opacity-0 opacity-60 hover:cursor-pointer hover:border-opacity-60 hover:opacity-100">
-      <ImageComponent width="30px" height="24px" />
-    </div>
+    <Link href={path}>
+      <div
+        className={`p-4 mx-2 border-b-2 border-b-blue-600 hover:cursor-pointer ${
+          !active
+            ? "border-opacity-0 opacity-60 hover:border-opacity-60 hover:opacity-100"
+            : ""
+        }`}
+      >
+        <ImageComponent width="30px" height="24px" />
+      </div>
+    </Link>
   );
 };
 
@@ -22,6 +38,7 @@ type NavbarItemType = {
   alt: string;
 };
 const Navbar = () => {
+  const router = useRouter();
   const items: NavbarItemType[] = [
     { path: "/", ImageComponent: HomeIcon, alt: "Home" },
     { path: "/routines", ImageComponent: ClipboardListIcon, alt: "Routines" },
@@ -40,7 +57,11 @@ const Navbar = () => {
         />
       </div>
       {items.map((item, idx) => (
-        <NavbarItem item={item} key={idx} />
+        <NavbarItem
+          item={item}
+          key={idx}
+          active={router.pathname === item.path}
+        />
       ))}
       <div className="ml-auto">
         <Image
