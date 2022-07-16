@@ -1,7 +1,7 @@
 import Image from "next/image";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
-const duration = require("dayjs/plugin/duration");
+import duration from "dayjs/plugin/duration";
 dayjs.extend(duration);
 
 import { Workout } from "../types/hevy";
@@ -9,36 +9,64 @@ import { Workout } from "../types/hevy";
 import { ThumbUpIcon, ChatIcon, LinkIcon } from "@heroicons/react/outline";
 
 import fake_data from "./fake_data";
+import { workoutsApiResponse } from "../pages/api/workoutPages";
+import { CircularProgress } from "@mui/material";
 
 const Header = ({ workout }: { workout: Workout }) => {
+  const {
+    profile_image,
+    username,
+    created_at,
+    name,
+    exercises,
+    start_time,
+    end_time,
+  } = workout;
+  const workoutDuration = dayjs.duration({ seconds: end_time - start_time });
+
   return (
     <>
       <div className="flex flex-row">
-        <div className="basis-1/12 mx-2 ">
+        <div className="mx-2">
           <Image
-            src={workout.profile_image}
+            src={profile_image}
             width="50px"
             height="50px"
             alt="Profile Image"
             className="m-2"
           />
         </div>
-        <div className="basis-11/12">
-          <div>{workout.username}</div>
+        <div className="basis-8/12">
+          <div>{username}</div>
           <div className=" opacity-70">
-            {dayjs(workout.created_at).format("D MMM YYYY, HH:MM")}
+            {dayjs(created_at).format("D MMM YYYY, HH:MM")}
           </div>
         </div>
       </div>
-      <div className="basis 12/12 font-bold text-2xl mt-3">{workout.name}</div>
+      <div className="basis 12/12 font-bold text-2xl mt-3">{name}</div>
       <div className="flex flex-row my-3">
         <div className="mr-4">
           <div className="opacity-70">Duration</div>
-          <div>10h 20min</div>
+          <div>{`${Math.floor(workoutDuration.asHours())}h ${Math.floor(
+            workoutDuration.asMinutes() % 60
+          )}m`}</div>
         </div>
         <div>
           <div className="opacity-70">Volume</div>
-          <div>{workout.weight}</div>
+          <div>
+            {Math.floor(
+              exercises.reduce(
+                (accumulator, exercise) =>
+                  exercise.sets.reduce(
+                    (accumulator1, set) =>
+                      set.reps * set.weight_kg + accumulator1,
+                    0
+                  ) + accumulator,
+                0
+              )
+            )}
+            kg
+          </div>
         </div>
       </div>
     </>
@@ -127,8 +155,8 @@ const Comment = ({ workout }: { workout: Workout }) => {
         <input
           type="text"
           placeholder="Write a comment..."
-          className="bg-transparent mx-2 focus:outline-none"
-        />
+          className="bg-transparent mx-2 focus:outline-none w-full"
+        ></input>
       </div>
     </div>
   );
@@ -158,11 +186,32 @@ const Workout = ({ workout }: { workout: Workout }) => {
 };
 
 const Workouts = () => {
+  const [workouts, setWorkouts] = useState<workoutsApiResponse>({
+    workouts: [],
+  });
+  const [isLoading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/workoutPages")
+      .then((res) => res.json())
+      .then((data) => {
+        setWorkouts(data);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <div className="m-4">
-      {fake_data.workouts.map((workout) => (
-        <Workout key={workout.id} workout={workout} />
-      ))}
+      {isLoading ? (
+        <div className="flex justify-center">
+          <CircularProgress />
+        </div>
+      ) : (
+        workouts.workouts.map((workout) => (
+          <Workout key={workout.id} workout={workout} />
+        ))
+      )}
     </div>
   );
 };
